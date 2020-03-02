@@ -102,7 +102,7 @@ resource "google_compute_firewall" "allow-ssh" {
 
 resource "google_compute_instance" "vm_instance" {
   name          = "terraform-instance"
-  machine_type  = "f1-micro"
+  machine_type  = "n1-standard-1"
   zone          = "${var.region}-b"
   tags          = ["ssh","http"]
 
