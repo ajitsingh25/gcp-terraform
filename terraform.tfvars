@@ -1,0 +1,6 @@
+region          = "asia-south1"
+gcp_project     = "asingh13-1"
+credentials     = "asingh13-credentials.json"
+name            = "dev"
+public_subnet_cidr     = "172.20.10.0/24"
+private_subnet_cidr    = "172.20.20.0/24"
