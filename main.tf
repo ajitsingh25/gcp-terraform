@@ -109,12 +109,17 @@ resource "google_compute_instance" "vm_instance" {
       image = "centos-7"
     }
   }
+  
+  metadata {
+    sshKeys = "${var.gce_ssh_user}:${file(var.gce_ssh_pub_key_file)}"
+  }
 
   metadata_startup_script = file("startup.sh")
   
   network_interface {
     # A default network is created for all GCP projects
     subnetwork = google_compute_subnetwork.public-subnet.self_link
+    address_type = "INTERNAL"
     access_config {
     }
   }
@@ -135,6 +140,7 @@ resource "google_compute_instance" "vm_instance_private" {
   network_interface {
     # A default network is created for all GCP projects
     subnetwork = google_compute_subnetwork.private-subnet.self_link
+    address_type = "INTERNAL"
     access_config {
     }
   }
