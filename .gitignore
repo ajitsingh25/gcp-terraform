@@ -1,3 +1,4 @@
 *.json
 *.tfstate
 *.tfstate.*
+*ssh*

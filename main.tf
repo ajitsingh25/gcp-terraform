@@ -15,7 +15,7 @@ resource "google_compute_subnetwork" "public-subnet" {
  name          = "${var.name}-public-subnet"
  ip_cidr_range = "${var.public_subnet_cidr}"
  network       = "${google_compute_network.vpc.self_link}"
- region      = "${var.region}"
+ region        = "${var.region}"
 }
 
 //Create Private Subnet
@@ -23,7 +23,7 @@ resource "google_compute_subnetwork" "private-subnet" {
  name          = "${var.name}-private-subnet"
  ip_cidr_range = "${var.private_subnet_cidr}"
  network       = "${google_compute_network.vpc.self_link}"
- region      = "${var.region}"
+ region        = "${var.region}"
 }
 
 resource "google_compute_router" "router" {
@@ -42,7 +42,12 @@ resource "google_compute_router_nat" "nat" {
   router                             = "${google_compute_router.router.name}"
   region                             = "${google_compute_router.router.region}"
   nat_ip_allocate_option             = "AUTO_ONLY"
-  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  
+  subnetwork {
+    name                    = "${google_compute_subnetwork.public-subnet.self_link}"
+    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  }
 
   log_config {
     enable = true
@@ -110,19 +115,22 @@ resource "google_compute_instance" "vm_instance" {
     }
   }
   
-  metadata {
-    sshKeys = "${var.gce_ssh_user}:${file(var.gce_ssh_pub_key_file)}"
-  }
 
   metadata_startup_script = file("startup.sh")
   
   network_interface {
     # A default network is created for all GCP projects
     subnetwork = google_compute_subnetwork.public-subnet.self_link
-    address_type = "INTERNAL"
     access_config {
+      // Ephemeral IP
     }
   }
+}
+
+// Adding SSH Public Key in Project Meta Data
+resource "google_compute_project_metadata_item" "ssh-keys" {
+  key   = "ssh-keys-1"
+  value = "${var.public_key}"
 }
 
 resource "google_compute_instance" "vm_instance_private" {
@@ -132,7 +140,7 @@ resource "google_compute_instance" "vm_instance_private" {
   
   boot_disk {
     initialize_params {
-      image = "centos-7"
+      image = "cos-cloud/cos-dev-82-12919-0-0"
     }
   }
 
@@ -140,12 +148,7 @@ resource "google_compute_instance" "vm_instance_private" {
   network_interface {
     # A default network is created for all GCP projects
     subnetwork = google_compute_subnetwork.private-subnet.self_link
-    address_type = "INTERNAL"
-    access_config {
-    }
+
   }
 }
 
-output "ip" {
-  value = "${google_compute_instance.vm_instance.network_interface.0.access_config.0.nat_ip}"
-}
